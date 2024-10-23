@@ -7,6 +7,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type LoginRespone struct {
+	AccountNumber int64  `json:"account_number"`
+	Token         string `json:"token"`
+}
+
 type LoginRequest struct {
 	AccountNumber int64  `json:"account_number"`
 	Password      string `json:"password"`
@@ -46,4 +51,8 @@ func NewAccount(fisrtName, lastName, password string) (*Account, error) {
 		EncryptedPassword: string(encPassword),
 		CreatedAt:         time.Now().UTC(),
 	}, nil
+}
+
+func (a *Account) ValidatePassword(password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(a.EncryptedPassword), []byte(password)) == nil
 }

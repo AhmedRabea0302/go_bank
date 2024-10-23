@@ -46,6 +46,7 @@ func (s *PostgresStore) CreateAccountTable() error {
 			first_name VARCHAR(255) NOT NULL,
             last_name VARCHAR(255) NOT NULL,
             account_number BIGINT UNIQUE NOT NULL,
+			encrypted_password VARCHAR(255) NOT NULL,
             balance FLOAT DEFAULT 0,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -58,14 +59,15 @@ func (s *PostgresStore) CreateAccountTable() error {
 
 func (s *PostgresStore) CreateAccount(acc *Account) error {
 
-	query := `INSERT INTO accounts (first_name, last_name, account_number, balance, created_at)
-		VALUES ($1, $2, $3, $4, $5)`
+	query := `INSERT INTO accounts (first_name, last_name, account_number, encrypted_password, balance, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)`
 
 	result, err := s.db.Exec(
 		query,
 		acc.FirstName,
 		acc.LastName,
 		acc.AccountNumber,
+		acc.EncryptedPassword,
 		acc.Balance,
 		acc.CreatedAt,
 	)
@@ -124,7 +126,7 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 
 func (s *PostgresStore) GetAccountByAccountNumber(accountNumber int) (*Account, error) {
 	query := `
-		SELECT id, first_name, last_name, account_number, balance, created_at .
+		SELECT id, first_name, last_name, account_number, balance, created_at
 		FROM accounts
 		WHERE account_number = $1`
 	row, err := s.db.Query(query, accountNumber)

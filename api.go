@@ -53,8 +53,26 @@ func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// Search user in DB
+	acc, err := s.store.GetAccountByAccountNumber(int(req.AccountNumber))
+	if err != nil {
+		return err
+	}
 
-	return WriteJSON(w, http.StatusOK, req)
+	if !acc.ValidatePassword(req.Password) {
+		return fmt.Errorf("invalid credentials")
+	}
+
+	token, err := createJWTToken(acc)
+	if err != nil {
+		return err
+	}
+
+	resp := LoginRespone{
+		Token:         token,
+		AccountNumber: acc.AccountNumber,
+	}
+
+	return WriteJSON(w, http.StatusOK, resp)
 }
 
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
