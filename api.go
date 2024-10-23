@@ -28,6 +28,7 @@ func NewAPIServer(listenAddr string, store Storage) *APIServer {
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
+	router.HandleFunc("/login", makeHTTPHandleFunc(s.handleLogin))
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleGetAccountById), s.store))
 	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer))
@@ -39,6 +40,15 @@ func (s *APIServer) Run() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusOK, req)
 }
 
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
@@ -87,16 +97,15 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	account := NewAccount(createAcountReq.FirstName, createAcountReq.LastName)
-	if err := s.store.CreateAccount(account); err != nil {
-		return err
-	}
-	token, err := createJWTToken(account)
-	fmt.Println("JWT Token:", token)
-
+	account, err := NewAccount(createAcountReq.FirstName, createAcountReq.LastName, createAcountReq.Password)
 	if err != nil {
 		return err
 	}
+
+	if err := s.store.CreateAccount(account); err != nil {
+		return err
+	}
+
 	return WriteJSON(w, http.StatusOK, account)
 }
 
